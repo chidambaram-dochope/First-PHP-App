@@ -1,327 +1,513 @@
-# First-PHP-App
-this is my first PHP app that i am putting on GitHub
-# Complete Guide: Setup CodePipeline for PHP Application Deployment on EC2
+![](https://github.com/googleapis/google-api-php-client/workflows/.github/workflows/tests.yml/badge.svg)
 
-## What is CodePipeline?
+# Google APIs Client Library for PHP #
 
-CodePipeline is like an automated assembly line for your code. When you make changes to your PHP application, it automatically tests and deploys those changes to your server without you having to do it manually.
+**NOTE**: please check to see if the package you'd like to install is available in our
+list of [Google cloud packages](https://cloud.google.com/php/docs/reference) first, as
+these are the recommended libraries.
 
-## Prerequisites (What You Need Before Starting)
+<dl>
+  <dt>Reference Docs</dt><dd><a href="https://googleapis.github.io/google-api-php-client/">https://googleapis.github.io/google-api-php-client/</a></dd>
+  <dt>License</dt><dd>Apache 2.0</dd>
+</dl>
 
-### 1. Create an AWS Account
+The Google API Client Library enables you to work with Google APIs such as Gmail, Drive or YouTube on your server.
 
-- Go to aws.amazon.com and sign up
-- You'll need a credit card (AWS has a free tier for beginners)
-- Complete the verification process
+These client libraries are officially supported by Google. However, the libraries are considered complete and are in maintenance mode. This means that we will address critical bugs and security issues but will not add any new features.
 
-### 2. Create a GitHub Account
+## Google Cloud Platform
 
-- Go to github.com and sign up with your email
-- GitHub is like Google Drive but for code - it stores your application files
+For Google Cloud Platform APIs such as [Datastore][cloud-datastore], [Cloud Storage][cloud-storage], [Pub/Sub][cloud-pubsub], and [Compute Engine][cloud-compute], we recommend using the Google Cloud client libraries. For a complete list of supported Google Cloud client libraries, see [googleapis/google-cloud-php](https://github.com/googleapis/google-cloud-php).
 
-## Step 1: Prepare Your PHP Application on GitHub
+[cloud-datastore]: https://github.com/googleapis/google-cloud-php-datastore
+[cloud-pubsub]: https://github.com/googleapis/google-cloud-php-pubsub
+[cloud-storage]: https://github.com/googleapis/google-cloud-php-storage
+[cloud-compute]: https://github.com/googleapis/google-cloud-php-compute
 
-### Understanding GitHub Basics
+## Requirements ##
+* [PHP 8.0 or higher](https://www.php.net/)
 
-- **Repository (Repo)**: Think of it as a folder that contains all your application files
-- **Commit**: Saving changes to your files
-- **Push**: Uploading your changes to GitHub
+## Developer Documentation ##
 
-### Create Your First Repository
+The [docs folder](docs/) provides detailed guides for using this library.
 
-1. Log into GitHub
-2. Click the green "New" button or the "+" icon in the top right
-3. Name your repository (example: "my-php-app")
-4. Make it "Public" (free option)
-5. Check "Add a README file"
-6. Click "Create repository"
+## Installation ##
 
-### Upload Your PHP Files
+You can use **Composer** or simply **Download the Release**
 
-1. In your new repository, click "uploading an existing file"
-2. Drag and drop your PHP files or click "choose your files"
-3. Add a commit message like "Added my PHP application"
-4. Click "Commit changes"
+### Composer
 
-## Step 2: Create and Configure EC2 Instance
+The preferred method is via [composer](https://getcomposer.org/). Follow the
+[installation instructions](https://getcomposer.org/doc/00-intro.md) if you do not already have
+composer installed.
 
-### Launch EC2 Instance
+Once composer is installed, execute the following command in your project root to install this library:
 
-1. Go to AWS Console → EC2 service
-2. Click "Launch Instance"
-3. Choose "Amazon Linux 2" (free tier eligible)
-4. Select "t2.micro" instance type (free tier)
-5. Create a new key pair:
-    - Name it something memorable like "my-php-key"
-    - Download the .pem file and keep it safe
-6. Configure Security Group:
-    - Allow SSH (port 22) from your IP
-    - Allow HTTP (port 80) from anywhere
-    - Allow HTTPS (port 443) from anywhere
-7. Launch the instance
-
-### Install Required Software on EC2
-
-1. Connect to your EC2 instance using SSH
-2. Run these commands one by one:
-
-```bash
-# Update the system
-sudo yum update -y
-
-# Install Apache web server
-sudo yum install httpd -y
-
-# Install PHP
-sudo yum install php php-mysql -y
-
-# Install CodeDeploy agent
-sudo yum install ruby wget -y
-cd /home/ec2-user
-wget https://aws-codedeploy-us-east-1.s3.us-east-1.amazonaws.com/latest/install
-chmod +x ./install
-sudo ./install auto
-
-# Start Apache
-sudo systemctl start httpd
-sudo systemctl enable httpd
+```sh
+composer require google/apiclient
 ```
 
-## Step 3: Create IAM Roles (Permission Settings)
-
-### Create CodePipeline Service Role
-
-1. Go to AWS Console → IAM service
-2. Click "Roles" → "Create role"
-3. Select "AWS service" → "CodePipeline"
-4. Attach policy: "AWSCodePipelineFullAccess"
-5. Name it "CodePipelineServiceRole"
-6. Create the role
-
-### Create CodeDeploy Service Role
-
-1. Create another role
-2. Select "AWS service" → "CodeDeploy"
-3. Choose "CodeDeploy - EC2/On-premises"
-4. The required policies will be attached automatically
-5. Name it "CodeDeployServiceRole"
-6. Create the role
-
-### Create EC2 Instance Profile
-
-1. Create another role
-2. Select "AWS service" → "EC2"
-3. Attach policies:
-    - "AmazonS3ReadOnlyAccess"
-    - "AWSCodeDeployRole"
-4. Name it "EC2CodeDeployRole"
-5. Create the role
-6. Go to EC2 → Instances → Select your instance
-7. Actions → Security → Modify IAM role
-8. Attach the "EC2CodeDeployRole"
-
-## Step 4: Create S3 Bucket (Storage for Your Code)
-
-1. Go to AWS Console → S3 service
-2. Click "Create bucket"
-3. Name it uniquely (example: "my-php-app-deployment-bucket-12345")
-4. Keep all default settings
-5. Create the bucket
-
-## Step 5: Set Up CodeDeploy Application
-
-### Create CodeDeploy Application
-
-1. Go to AWS Console → CodeDeploy service
-2. Click "Create application"
-3. Application name: "MyPHPApp"
-4. Compute platform: "EC2/On-premises"
-5. Create application
-
-### Create Deployment Group
-
-1. In your CodeDeploy application, click "Create deployment group"
-2. Deployment group name: "MyPHPApp-DeploymentGroup"
-3. Service role: Select "CodeDeployServiceRole" (created earlier)
-4. Deployment type: "In-place"
-5. Environment configuration: "Amazon EC2 instances"
-6. Add tag: Key="Name", Value=(your EC2 instance name)
-7. Install CodeDeploy Agent: "Now and schedule updates"
-8. Load balancer: Uncheck "Enable load balancing"
-9. Create deployment group
-
-## Step 6: Prepare Your GitHub Repository for Deployment
-
-### Add Required Files to Your Repository
-
-You need to add these special files to tell CodeDeploy how to handle your application:
-
-#### Create appspec.yml file
-
-1. In your GitHub repository, click "Create new file"
-2. Name it "appspec.yml"
-3. Add this content:
-
-```yaml
-version: 0.0
-os: linux
-files:
-  - source: /
-    destination: /var/www/html
-    overwrite: yes
-hooks:
-  BeforeInstall:
-    - location: scripts/install_dependencies.sh
-      timeout: 300
-      runas: root
-  ApplicationStart:
-    - location: scripts/start_server.sh
-      timeout: 300
-      runas: root
-  ApplicationStop:
-    - location: scripts/stop_server.sh
-      timeout: 300
-      runas: root
+If you're facing a timeout error then either increase the timeout for composer by adding the env flag as `COMPOSER_PROCESS_TIMEOUT=600 composer install` or you can put this in the `config` section of the composer schema:
+```
+{
+    "config": {
+        "process-timeout": 600
+    }
+}
 ```
 
-#### Create scripts folder and files
+Finally, be sure to include the autoloader:
 
-1. Create a new folder called "scripts"
-2. Inside scripts folder, create three files:
-
-**install_dependencies.sh:**
-
-```bash
-#!/bin/bash
-yum update -y
-yum install -y httpd php
+```php
+require_once '/path/to/your-project/vendor/autoload.php';
 ```
 
-**start_server.sh:**
+This library relies on `google/apiclient-services`. That library provides up-to-date API wrappers for a large number of Google APIs. In order that users may make use of the latest API clients, this library does not pin to a specific version of `google/apiclient-services`. **In order to prevent the accidental installation of API wrappers with breaking changes**, it is highly recommended that you pin to the [latest version](https://github.com/googleapis/google-api-php-client-services/releases) yourself prior to using this library in production.
 
-```bash
-#!/bin/bash
-systemctl start httpd
-systemctl enable httpd
+#### Cleaning up unused services
+
+There are over 200 Google API services. The chances are good that you will not
+want them all. In order to avoid shipping these dependencies with your code,
+you can run the `Google\Task\Composer::cleanup` task and specify the services
+you want to keep in `composer.json`:
+
+```json
+{
+    "require": {
+        "google/apiclient": "^2.15.0"
+    },
+    "scripts": {
+        "pre-autoload-dump": "Google\\Task\\Composer::cleanup"
+    },
+    "extra": {
+        "google/apiclient-services": [
+            "Drive",
+            "YouTube"
+        ]
+    }
+}
 ```
 
-**stop_server.sh:**
+This example will remove all services other than "Drive" and "YouTube" when
+`composer update` or a fresh `composer install` is run.
 
-```bash
-#!/bin/bash
-systemctl stop httpd
+**IMPORTANT**: If you add any services back in `composer.json`, you will need to
+remove the `vendor/google/apiclient-services` directory explicitly for the
+change you made to have effect:
+
+```sh
+rm -r vendor/google/apiclient-services
+composer update
 ```
 
-3. Commit all these changes to your repository
+**NOTE**: This command performs an exact match on the service name, so to keep
+`YouTubeReporting` and `YouTubeAnalytics` as well, you'd need to add each of
+them explicitly:
 
-## Step 7: Create CodePipeline
+```json
+{
+    "extra": {
+        "google/apiclient-services": [
+            "Drive",
+            "YouTube",
+            "YouTubeAnalytics",
+            "YouTubeReporting"
+        ]
+    }
+}
+```
 
-### Set Up the Pipeline
+### Download the Release
 
-1. Go to AWS Console → CodePipeline service
-2. Click "Create pipeline"
-3. Pipeline name: "MyPHPApp-Pipeline"
-4. Service role: "New service role" (or select existing "CodePipelineServiceRole")
-5. Artifact store: "Default location" (uses S3)
-6. Click "Next"
+If you prefer not to use composer, you can download the package in its entirety. The [Releases](https://github.com/googleapis/google-api-php-client/releases) page lists all stable versions. Download any file
+with the name `google-api-php-client-[RELEASE_NAME].zip` for a package including this library and its dependencies.
 
-### Configure Source Stage
+Uncompress the zip file you download, and include the autoloader in your project:
 
-1. Source provider: "GitHub (Version 2)"
-2. Click "Connect to GitHub"
-3. Connection name: "MyGitHubConnection"
-4. Click "Connect to GitHub" and authorize AWS
-5. Repository name: Select your repository
-6. Branch name: "main" (or "master")
-7. Output artifacts: "SourceOutput"
-8. Click "Next"
+```php
+require_once '/path/to/google-api-php-client/vendor/autoload.php';
+```
 
-### Skip Build Stage
+For additional installation and setup instructions, see [the documentation](docs/).
 
-1. Click "Skip build stage" (since PHP doesn't need compilation)
-2. Confirm by clicking "Skip"
+## Examples ##
+See the [`examples/`](examples) directory for examples of the key client features. You can
+view them in your browser by running the php built-in web server.
 
-### Configure Deploy Stage
+```
+$ php -S localhost:8000 -t examples/
+```
 
-1. Deploy provider: "AWS CodeDeploy"
-2. Region: Select your region (same as EC2)
-3. Application name: "MyPHPApp"
-4. Deployment group: "MyPHPApp-DeploymentGroup"
-5. Input artifacts: "SourceOutput"
-6. Click "Next"
+And then browsing to the host and port you specified
+(in the above example, `http://localhost:8000`).
 
-### Review and Create
+### Basic Example ###
 
-1. Review all settings
-2. Click "Create pipeline"
+```php
+// include your composer dependencies
+require_once 'vendor/autoload.php';
 
-## Step 8: Test Your Pipeline
+$client = new Google\Client();
+$client->setApplicationName("Client_Library_Examples");
+$client->setDeveloperKey("YOUR_APP_KEY");
 
-### Trigger Deployment
+$service = new Google\Service\Books($client);
+$query = 'Henry David Thoreau';
+$optParams = [
+  'filter' => 'free-ebooks',
+];
+$results = $service->volumes->listVolumes($query, $optParams);
 
-1. Your pipeline should start automatically
-2. You can watch the progress in the CodePipeline console
-3. The process goes: Source → Deploy
-4. Each stage will show green when successful
+foreach ($results->getItems() as $item) {
+  echo $item['volumeInfo']['title'], "<br /> \n";
+}
+```
 
-### Verify Deployment
+### Authentication with OAuth ###
 
-1. Go to your EC2 instance's public IP address in a browser
-2. You should see your PHP application running
-3. If you see the Apache default page, your files might not be in the right location
+> An example of this can be seen in [`examples/simple-file-upload.php`](examples/simple-file-upload.php).
 
-## Step 9: Make Changes and See Automatic Deployment
+1. Follow the instructions to [Create Web Application Credentials](docs/oauth-web.md#create-authorization-credentials)
+1. Download the JSON credentials
+1. Set the path to these credentials using `Google\Client::setAuthConfig`:
 
-### Test Automatic Deployment
+    ```php
+    $client = new Google\Client();
+    $client->setAuthConfig('/path/to/client_credentials.json');
+    ```
 
-1. Go to your GitHub repository
-2. Edit one of your PHP files
-3. Make a small change (add a comment or change some text)
-4. Commit the changes
-5. Go back to CodePipeline - it should automatically start deploying your changes!
+1. Set the scopes required for the API you are going to call
 
-## Troubleshooting Common Issues
+    ```php
+    $client->addScope(Google\Service\Drive::DRIVE);
+    ```
 
-### Pipeline Fails at Deploy Stage
+1. Set your application's redirect URI
 
-- Check that your EC2 instance has the CodeDeploy agent running
-- Verify IAM roles are correctly attached
-- Ensure your appspec.yml file is correctly formatted
+    ```php
+    // Your redirect URI can be any registered URI, but in this example
+    // we redirect back to this same page
+    $redirect_uri = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'];
+    $client->setRedirectUri($redirect_uri);
+    ```
 
-### Can't Access Your Application
+1. In the script handling the redirect URI, exchange the authorization code for an access token:
 
-- Check EC2 security groups allow HTTP traffic
-- Verify Apache is running: `sudo systemctl status httpd`
-- Check file permissions in /var/www/html
+    ```php
+    if (isset($_GET['code'])) {
+        $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+    }
+    ```
 
-### GitHub Connection Issues
+### Authentication with Service Accounts ###
 
-- Make sure you've authorized AWS in your GitHub settings
-- Try reconnecting to GitHub in CodePipeline settings
+> An example of this can be seen in [`examples/service-account.php`](examples/service-account.php).
 
-## What Happens Next?
+Some APIs
+(such as the [YouTube Data API](https://developers.google.com/youtube/v3/)) do
+not support service accounts. Check with the specific API documentation if API
+calls return unexpected 401 or 403 errors.
 
-Every time you push changes to your GitHub repository, CodePipeline will automatically:
+1. Follow the instructions to [Create a Service Account](docs/oauth-server.md#creating-a-service-account)
+1. Download the JSON credentials
+1. Set the path to these credentials using the `GOOGLE_APPLICATION_CREDENTIALS` environment variable:
 
-1. Detect the changes
-2. Download your updated code
-3. Deploy it to your EC2 instance
-4. Your website will be updated with zero downtime!
+    ```php
+    putenv('GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json');
+    ```
 
-This is called "Continuous Deployment" - it saves you from manually uploading files every time you make changes.
+1. Tell the Google client to use your service account credentials to authenticate:
 
-## Security Best Practices
+    ```php
+    $client = new Google\Client();
+    $client->useApplicationDefaultCredentials();
+    ```
 
-- Regularly update your EC2 instance
-- Use strong passwords and keep your .pem file secure
-- Monitor your AWS billing dashboard
-- Set up CloudWatch alarms for unusual activity
+1. Set the scopes required for the API you are going to call
 
-## Cost Considerations
+    ```php
+    $client->addScope(Google\Service\Drive::DRIVE);
+    ```
 
-- EC2 t2.micro is free tier eligible for 12 months
-- CodePipeline: First pipeline free, then $1/month per additional pipeline
-- CodeDeploy: Free for EC2 deployments
-- S3: Minimal storage costs for your code artifacts
+1. If you have delegated domain-wide access to the service account and you want to impersonate a user account, specify the email address of the user account using the method setSubject:
 
-You now have a fully automated deployment pipeline for your PHP application!
+    ```php
+    $client->setSubject($user_to_impersonate);
+    ```
+
+#### How to use a specific JSON key
+
+If you want to a specific JSON key instead of using `GOOGLE_APPLICATION_CREDENTIALS` environment variable, you can do this:
+
+```php
+$jsonKey = [
+   'type' => 'service_account',
+   // ...
+];
+$client = new Google\Client();
+$client->setAuthConfig($jsonKey);
+```
+
+### Making Requests ###
+
+The classes used to call the API in [google-api-php-client-services](https://github.com/googleapis/google-api-php-client-services) are autogenerated. They map directly to the JSON requests and responses found in the [APIs Explorer](https://developers.google.com/apis-explorer/#p/).
+
+A JSON request to the [Datastore API](https://developers.google.com/apis-explorer/#p/datastore/v1beta3/datastore.projects.runQuery) would look like this:
+
+```
+POST https://datastore.googleapis.com/v1beta3/projects/YOUR_PROJECT_ID:runQuery?key=YOUR_API_KEY
+```
+```json
+{
+    "query": {
+        "kind": [{
+            "name": "Book"
+        }],
+        "order": [{
+            "property": {
+                "name": "title"
+            },
+            "direction": "descending"
+        }],
+        "limit": 10
+    }
+}
+```
+
+Using this library, the same call would look something like this:
+
+```php
+// create the datastore service class
+$datastore = new Google\Service\Datastore($client);
+
+// build the query - this maps directly to the JSON
+$query = new Google\Service\Datastore\Query([
+    'kind' => [
+        [
+            'name' => 'Book',
+        ],
+    ],
+    'order' => [
+        'property' => [
+            'name' => 'title',
+        ],
+        'direction' => 'descending',
+    ],
+    'limit' => 10,
+]);
+
+// build the request and response
+$request = new Google\Service\Datastore\RunQueryRequest(['query' => $query]);
+$response = $datastore->projects->runQuery('YOUR_DATASET_ID', $request);
+```
+
+However, as each property of the JSON API has a corresponding generated class, the above code could also be written like this:
+
+```php
+// create the datastore service class
+$datastore = new Google\Service\Datastore($client);
+
+// build the query
+$request = new Google\Service\Datastore_RunQueryRequest();
+$query = new Google\Service\Datastore\Query();
+//   - set the order
+$order = new Google\Service\Datastore_PropertyOrder();
+$order->setDirection('descending');
+$property = new Google\Service\Datastore\PropertyReference();
+$property->setName('title');
+$order->setProperty($property);
+$query->setOrder([$order]);
+//   - set the kinds
+$kind = new Google\Service\Datastore\KindExpression();
+$kind->setName('Book');
+$query->setKinds([$kind]);
+//   - set the limit
+$query->setLimit(10);
+
+// add the query to the request and make the request
+$request->setQuery($query);
+$response = $datastore->projects->runQuery('YOUR_DATASET_ID', $request);
+```
+
+The method used is a matter of preference, but *it will be very difficult to use this library without first understanding the JSON syntax for the API*, so it is recommended to look at the [APIs Explorer](https://developers.google.com/apis-explorer/#p/) before using any of the services here.
+
+### Making HTTP Requests Directly ###
+
+If Google Authentication is desired for external applications, or a Google API is not available yet in this library, HTTP requests can be made directly.
+
+If you are installing this client only to authenticate your own HTTP client requests, you should use [`google/auth`](https://github.com/googleapis/google-auth-library-php#call-the-apis) instead.
+
+The `authorize` method returns an authorized [Guzzle Client](http://docs.guzzlephp.org/), so any request made using the client will contain the corresponding authorization.
+
+```php
+// create the Google client
+$client = new Google\Client();
+
+/**
+ * Set your method for authentication. Depending on the API, This could be
+ * directly with an access token, API key, or (recommended) using
+ * Application Default Credentials.
+ */
+$client->useApplicationDefaultCredentials();
+$client->addScope(Google\Service\Plus::PLUS_ME);
+
+// returns a Guzzle HTTP Client
+$httpClient = $client->authorize();
+
+// make an HTTP request
+$response = $httpClient->get('https://www.googleapis.com/plus/v1/people/me');
+```
+
+### Caching ###
+
+It is recommended to use another caching library to improve performance. This can be done by passing a [PSR-6](https://www.php-fig.org/psr/psr-6/) compatible library to the client:
+
+```php
+use League\Flysystem\Adapter\Local;
+use League\Flysystem\Filesystem;
+use Cache\Adapter\Filesystem\FilesystemCachePool;
+
+$filesystemAdapter = new Local(__DIR__.'/');
+$filesystem        = new Filesystem($filesystemAdapter);
+
+$cache = new FilesystemCachePool($filesystem);
+$client->setCache($cache);
+```
+
+In this example we use [PHP Cache](http://www.php-cache.com/). Add this to your project with composer:
+
+```
+composer require cache/filesystem-adapter
+```
+
+### Updating Tokens ###
+
+When using [Refresh Tokens](https://developers.google.com/identity/protocols/OAuth2InstalledApp#offline) or [Service Account Credentials](https://developers.google.com/identity/protocols/OAuth2ServiceAccount#overview), it may be useful to perform some action when a new access token is granted. To do this, pass a callable to the `setTokenCallback` method on the client:
+
+```php
+$logger = new Monolog\Logger();
+$tokenCallback = function ($cacheKey, $accessToken) use ($logger) {
+  $logger->debug(sprintf('new access token received at cache key %s', $cacheKey));
+};
+$client->setTokenCallback($tokenCallback);
+```
+
+### Debugging Your HTTP Request using Charles ###
+
+It is often very useful to debug your API calls by viewing the raw HTTP request. This library supports the use of [Charles Web Proxy](https://www.charlesproxy.com/documentation/getting-started/). Download and run Charles, and then capture all HTTP traffic through Charles with the following code:
+
+```php
+// FOR DEBUGGING ONLY
+$httpClient = new GuzzleHttp\Client([
+    'proxy' => 'localhost:8888', // by default, Charles runs on localhost port 8888
+    'verify' => false, // otherwise HTTPS requests will fail.
+]);
+
+$client = new Google\Client();
+$client->setHttpClient($httpClient);
+```
+
+Now all calls made by this library will appear in the Charles UI.
+
+One additional step is required in Charles to view SSL requests. Go to **Charles > Proxy > SSL Proxying Settings** and add the domain you'd like captured. In the case of the Google APIs, this is usually `*.googleapis.com`.
+
+### Controlling HTTP Client Configuration Directly
+
+Google API Client uses [Guzzle](http://docs.guzzlephp.org/) as its default HTTP client. That means that you can control your HTTP requests in the same manner you would for any application using Guzzle.
+
+Let's say, for instance, we wished to apply a referrer to each request.
+
+```php
+use GuzzleHttp\Client;
+
+$httpClient = new Client([
+    'headers' => [
+        'referer' => 'mysite.com'
+    ]
+]);
+
+$client = new Google\Client();
+$client->setHttpClient($httpClient);
+```
+
+Other Guzzle features such as [Handlers and Middleware](http://docs.guzzlephp.org/en/stable/handlers-and-middleware.html) offer even more control.
+
+### Partial Consent and Granted Scopes
+
+When using OAuth2 3LO (e.g. you're a client requesting credentials from a 3rd
+party, such as in the [simple file upload example](examples/simple-file-upload.php)),
+you may want to take advantage of Partial Consent.
+
+To allow clients to only grant certain scopes in the OAuth2 screen, pass the
+querystring parameter for `enable_serial_consent` when generating the
+authorization URL:
+
+```php
+$authUrl = $client->createAuthUrl($scope, ['enable_serial_consent' => 'true']);
+```
+
+Once the flow is completed, you can see which scopes were granted by calling
+`getGrantedScope` on the OAuth2 object:
+
+```php
+// Space-separated string of granted scopes if it exists, otherwise null.
+echo $client->getOAuth2Service()->getGrantedScope();
+```
+
+### Service Specific Examples ###
+
+YouTube: https://github.com/youtube/api-samples/tree/master/php
+
+## How Do I Contribute? ##
+
+Please see the [contributing](.github/CONTRIBUTING.md) page for more information. In particular, we love pull requests - but please make sure to sign the contributor license agreement.
+
+## Frequently Asked Questions ##
+
+### What do I do if something isn't working? ###
+
+For support with the library the best place to ask is via the google-api-php-client tag on StackOverflow: https://stackoverflow.com/questions/tagged/google-api-php-client
+
+If there is a specific bug with the library, please [file an issue](https://github.com/googleapis/google-api-php-client/issues) in the GitHub issues tracker, including an example of the failing code and any specific errors retrieved. Feature requests can also be filed, as long as they are core library requests, and not-API specific: for those, refer to the documentation for the individual APIs for the best place to file requests. Please try to provide a clear statement of the problem that the feature would address.
+
+### I want an example of X! ###
+
+If X is a feature of the library, file away! If X is an example of using a specific service, the best place to go is to the teams for those specific APIs - our preference is to link to their examples rather than add them to the library, as they can then pin to specific versions of the library. If you have any examples for other APIs, let us know and we will happily add a link to the README above!
+
+### Why do some Google\Service classes have weird names? ###
+
+The _Google\Service_ classes are generally automatically generated from the API discovery documents: https://developers.google.com/discovery/. Sometimes new features are added to APIs with unusual names, which can cause some unexpected or non-standard style naming in the PHP classes.
+
+### How do I deal with non-JSON response types? ###
+
+Some services return XML or similar by default, rather than JSON, which is what the library supports. You can request a JSON response by adding an 'alt' argument to optional params that is normally the last argument to a method call:
+
+```php
+$opt_params = array(
+  'alt' => "json"
+);
+```
+
+### How do I set a field to null? ###
+
+The library strips out nulls from the objects sent to the Google APIs as it is the default value of all of the uninitialized properties. To work around this, set the field you want to null to `Google\Model::NULL_VALUE`. This is a placeholder that will be replaced with a true null when sent over the wire.
+
+## Code Quality ##
+
+Run the PHPUnit tests with PHPUnit. You can configure an API key and token in BaseTest.php to run all calls, but this will require some setup on the Google Developer Console.
+
+    phpunit tests/
+
+### Coding Style
+
+To check for coding style violations, run
+
+```
+vendor/bin/phpcs src --standard=style/ruleset.xml -np
+```
+
+To automatically fix (fixable) coding style violations, run
+
+```
+vendor/bin/phpcbf src --standard=style/ruleset.xml
+```
